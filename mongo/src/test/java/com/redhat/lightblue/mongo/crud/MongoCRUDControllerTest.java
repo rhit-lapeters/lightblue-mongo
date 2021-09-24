@@ -18,19 +18,17 @@
  */
 package com.redhat.lightblue.mongo.crud;
 
+import static com.redhat.lightblue.mongo.crud.MongoCRUDController.PARTIAL_FILTER_EXPRESSION_OPTION_NAME;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.mongodb.MongoClient;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import org.junit.Assert;
@@ -548,6 +546,32 @@ public class MongoCRUDControllerTest extends AbstractMongoCrudTest {
     }
 
     @Test
+    public void appendPartialFilterOptionMap() throws Exception {
+        Map<String,Object> partialFilter = Collections.singletonMap("status", "ACTIVE");
+
+        Index index = new Index();
+        index.getProperties().put(PARTIAL_FILTER_EXPRESSION_OPTION_NAME, partialFilter);
+        BasicDBObject options = new BasicDBObject("unique", index.isUnique());
+
+        MongoCRUDController.appendPartialFilterExpressionOption(index, options);
+
+        Assert.assertEquals("{\"status\": \"ACTIVE\"}", options.get(PARTIAL_FILTER_EXPRESSION_OPTION_NAME).toString());
+    }
+
+    @Test
+    public void appendPartialFilterOptionString() throws Exception {
+        String partialFilter = "{\"status\": \"ACTIVE\"}";
+
+        Index index = new Index();
+        index.getProperties().put(PARTIAL_FILTER_EXPRESSION_OPTION_NAME, partialFilter);
+        BasicDBObject options = new BasicDBObject("unique", index.isUnique());
+
+        MongoCRUDController.appendPartialFilterExpressionOption(index, options);
+
+        Assert.assertEquals("{\"status\": \"ACTIVE\"}", options.get(PARTIAL_FILTER_EXPRESSION_OPTION_NAME).toString());
+    }
+
+    @Test
     public void indexOptionMatchTest() {
         Index i = new Index();
         i.getProperties().put("foo", "bar");
@@ -587,7 +611,7 @@ public class MongoCRUDControllerTest extends AbstractMongoCrudTest {
         Assert.assertTrue("partialFilterExpression index option is the same, indexes should match", MongoCRUDController.indexOptionsMatch(metadataIndex, indexFromDb));
 
         // remove one element from the filter expression
-        ((ArrayList)((java.util.HashMap)metadataIndex.getProperties().get(MongoCRUDController.PARTIAL_FILTER_EXPRESSION_OPTION_NAME)).get("$and")).remove(1);
+        ((ArrayList)((java.util.HashMap)metadataIndex.getProperties().get(PARTIAL_FILTER_EXPRESSION_OPTION_NAME)).get("$and")).remove(1);
 
         Assert.assertFalse("partialFilterExpression index option is different, indexes should not match", MongoCRUDController.indexOptionsMatch(metadataIndex, indexFromDb));
     }
